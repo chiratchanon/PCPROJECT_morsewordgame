@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morse Word Game: Arduino + MQTT</title>
+<meta name="description" content="An Arduino UNO R4 WiFi listens to your voice, decodes Morse code, and sends words over MQTT to a browser game.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#E8ECF6;--ink:#151B3B;--muted:#5B6385;--signal:#3D35C9;--line:#C9D0E6;--card:#fff}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Sora,system-ui,sans-serif;line-height:1.6}
+a{color:var(--signal)}
+.wrap{max-width:880px;margin:0 auto;padding:0 20px}
+nav{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:20px 0}
+nav b{font-weight:800}
+nav div{display:flex;gap:20px;font-size:.92rem}
+nav a{color:var(--ink);text-decoration:none;font-weight:600}
+nav a:hover{color:var(--signal)}
+.hero{padding:56px 0 40px}
+.hero .dots{display:flex;gap:8px;align-items:center;margin-bottom:22px}
+.hero .dots i{display:block;height:12px;border-radius:6px;background:var(--signal)}
+.hero .dots .d{width:12px}.hero .dots .l{width:36px}
+h1{font-size:clamp(2.1rem,6vw,3.6rem);line-height:1.08;font-weight:800;margin:0 0 18px;max-width:16ch}
+.lead{font-size:1.1rem;color:var(--muted);max-width:56ch;margin:0 0 28px}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-block;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px;border:1.5px solid var(--ink);color:var(--ink)}
+.btn.main{background:var(--signal);border-color:var(--signal);color:#fff}
+.btn:hover{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn:focus-visible,a:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+section{padding:36px 0;border-top:1.5px solid var(--line)}
+h2{font-size:1.6rem;font-weight:800;margin:0 0 14px}
+h3{font-size:1.02rem;margin:22px 0 6px}
+p{margin:0 0 14px;max-width:66ch}
+.diagram{width:100%;height:auto;display:block;border-radius:14px;border:1.5px solid var(--line);margin:18px 0}
+ol.steps{padding-left:0;list-style:none;counter-reset:s;display:grid;gap:12px;max-width:66ch}
+ol.steps li{counter-increment:s;padding-left:46px;position:relative}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:32px;height:32px;border-radius:50%;background:var(--ink);color:#fff;font-weight:700;display:grid;place-items:center;font-size:.9rem}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1.5px solid var(--line);border-radius:12px;overflow:hidden;font-size:.94rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:#F1F3FA;font-weight:600}
+tr:last-child td{border-bottom:none}
+.scroll{overflow-x:auto}
+code,pre{font-family:"Space Mono",ui-monospace,monospace;font-size:.86rem}
+code{background:#fff;border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+pre{background:var(--ink);color:#E8ECF6;border-radius:12px;padding:16px 18px;overflow-x:auto;margin:0 0 14px}
+.note{background:#fff;border-left:4px solid var(--signal);border-radius:8px;padding:12px 16px;max-width:66ch}
+footer{padding:28px 0 48px;color:var(--muted);font-size:.9rem;border-top:1.5px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <b>Morse Word Game</b>
+    <div><a href="#how">How it works</a><a href="#build">Build it</a><a href="about.html">About</a><a href="game.html">Play</a></div>
+  </nav>
+
+  <header class="hero">
+    <div class="dots" aria-hidden="true"><span class="d i"></span><i class="l"></i><i class="d"></i><i class="l"></i><i class="d"></i></div>
+    <h1>Spell words in Morse with your voice</h1>
+    <p class="lead">An Arduino UNO R4 WiFi listens through a microphone, turns short and long sounds into dots and dashes, and sends the finished word over MQTT to a game in your browser.</p>
+    <div class="btns">
+      <a class="btn main" href="game.html">Play the game</a>
+      <a class="btn" href="morse-board.ino" download>Download the Arduino code</a>
+    </div>
+  </header>
+
+  <section id="how">
+    <h2>How it works</h2>
+    <img class="diagram" src="diagram-architecture.svg" alt="Voice goes into the microphone, the Arduino decodes Morse, sends the word to the MQTT server, and the game page checks it">
+    <ol class="steps">
+      <li><b>The game shows a word.</b> The web page picks a random word and shows the Morse pattern under each letter as a hint.</li>
+      <li><b>You speak it in Morse.</b> A short sound is a dot and a long sound is a dash. A pause ends the letter.</li>
+      <li><b>The board decodes and displays it.</b> The letters appear on an LCD. A button deletes the last letter.</li>
+      <li><b>You press send.</b> The board publishes the word over MQTT, and the page gives a point if it matches.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Reading Morse from sound</h2>
+    <p>The microphone is read for 50 ms at a time, and the difference between the loudest and quietest readings counts as the volume. Anything above a threshold is a sound, and its length decides what it means.</p>
+    <div class="scroll">
+    <table>
+      <tr><th>What you hear</th><th>Meaning</th></tr>
+      <tr><td>Sound shorter than 400 ms</td><td>Dot (<code>.</code>)</td></tr>
+      <tr><td>Sound 400 ms or longer</td><td>Dash (<code>-</code>)</td></tr>
+      <tr><td>Silence of about 0.9 seconds</td><td>End of a letter, so it is decoded</td></tr>
+    </table>
+    </div>
+    <p style="margin-top:14px">Say a quick “di” for a dot and a held “daaah” for a dash. Claps and taps also work well. All the timings are constants at the top of the sketch.</p>
+  </section>
+
+  <section id="build">
+    <h2>Build it yourself</h2>
+    <h3>Parts and connections</h3>
+    <div class="scroll">
+    <table>
+      <tr><th>Part</th><th>Connects to</th></tr>
+      <tr><td>Arduino UNO R4 WiFi</td><td>USB to your computer</td></tr>
+      <tr><td>MAX4466 microphone</td><td>OUT to A0, VCC to 5V, GND to GND</td></tr>
+      <tr><td>Potentiometer (mic on/off)</td><td>Middle leg to A1, outer legs to 5V and GND</td></tr>
+      <tr><td>LED</td><td>Pin 2, through a resistor to GND</td></tr>
+      <tr><td>Delete-letter button</td><td>Pin 3 and GND</td></tr>
+      <tr><td>Send-word button</td><td>Pin 4 and GND</td></tr>
+      <tr><td>I2C LCD (16x2)</td><td>SDA, SCL, 5V, GND (address 0x27, or 0x3F)</td></tr>
+    </table>
+    </div>
+
+    <h3>Software</h3>
+    <ol class="steps">
+      <li>In the Arduino IDE, install the libraries <b>LiquidCrystal I2C</b> and <b>PubSubClient</b>. WiFi support comes with the R4 board package.</li>
+      <li>Open <a href="morse-board.ino">morse-board.ino</a> and fill in your WiFi name and password. Give each board its own <code>BOARD_ID</code>.</li>
+      <li>Upload it, open the Serial Monitor at 115200 baud, and wait for “Online” on the LCD.</li>
+      <li>Open the <a href="game.html">game page</a>, press <b>Connect</b>, and start spelling.</li>
+    </ol>
+
+    <h3>MQTT topics</h3>
+    <pre>pc/morse/&lt;board id&gt;/word     the word you send
+pc/morse/&lt;board id&gt;/status   online / offline (retained)</pre>
+    <p class="note">The project uses a free public MQTT server, so other people could in theory use the same topic names. For a classroom or event, change the <code>pc/morse</code> prefix to something unique in both the sketch and the game page.</p>
+  </section>
+
+  <footer>Built with an Arduino UNO R4 WiFi, a MAX4466 microphone, and MQTT over the public HiveMQ broker.</footer>
+</div>
+</body>
+</html>
