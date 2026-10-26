@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morse Word Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#fffffb;--ink:#000000;--muted:#85845b;--signal:#ae9d00;--ok:#12805C;--bad:#D6393F;--tile:#fff;--line:#000000}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:Sora,system-ui,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:24px 16px}
+main{width:100%;max-width:760px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:40px}
+h1{font-size:1.05rem;font-weight:800;margin:0;letter-spacing:.01em}
+.pills{display:flex;gap:8px}
+.pill{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);padding:5px 12px;font-size:.8rem;background:#fff}
+.pill i{width:9px;height:9px;background:#caccaa}
+.pill.on i{background:var(--ok)}
+.pill.wait i{background:#E0A100}  
+h2{font-size:clamp(1.6rem,5vw,2.4rem);font-weight:800;margin:0 0 12px;line-height:1.15}
+p{color:var(--muted);margin:0 0 20px;line-height:1.5;max-width:56ch}
+.loader{display:flex;align-items:center;gap:10px;margin:28px 0}
+.loader span{display:block;height:12px;background:var(--signal);opacity:.25;animation:blink 1.8s infinite}
+.loader .d{width:12px}.loader .l{width:36px}
+.loader span:nth-child(2){animation-delay:.3s}.loader span:nth-child(3){animation-delay:.6s}
+.loader span:nth-child(4){animation-delay:.9s}.loader span:nth-child(5){animation-delay:1.2s}
+@keyframes blink{0%,100%{opacity:.25}30%{opacity:1}}
+button{font:inherit;font-weight:600;cursor:pointer;padding:10px 18px;border:1.5px solid var(--ink);background:transparent;color:var(--ink)}
+button:hover{background:var(--ink);color:#fff}
+button:focus-visible,input:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+.hidden{display:none!important}
+.score{display:flex;gap:36px;margin-bottom:36px}
+.score div{display:flex;flex-direction:column}
+.score b{font-size:2.6rem;font-weight:800;line-height:1}
+.score small{color:var(--muted);font-size:.85rem;margin-top:6px}
+.layout{display:grid;grid-template-columns:1fr 250px;gap:32px;align-items:start}
+.lb{border:1.5px solid var(--line);background:#fff}
+.lb-h{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:var(--ink);color:#fff;font-weight:800;font-size:.85rem;letter-spacing:.04em;text-transform:uppercase}
+.lb ol{list-style:none;margin:0;padding:0;max-height:360px;overflow-y:auto}
+.lb li{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:baseline;padding:9px 14px;border-bottom:1px solid #e3e3dc}
+.lb li:last-child{border-bottom:none}
+.lb .rk{color:var(--muted);font-size:.85rem;font-weight:600}
+.lb .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb .sc{font-weight:800;font-size:1.15rem}
+.lb li:first-child{background:#faf8e6}
+.lb li:first-child .rk{color:var(--signal)}
+.lb li.empty{display:block;color:var(--muted);font-size:.9rem}
+@media (max-width:660px){.layout{grid-template-columns:1fr}}
+.label{color:var(--muted);font-size:.9rem;margin-bottom:14px}
+.word{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px}
+.tile{background:var(--tile);border:1.5px solid var(--line);padding:14px 10px 12px;min-width:64px;display:flex;flex-direction:column;align-items:center;gap:12px;transition:background .25s,border-color .25s,color .25s}
+.tile .ch{font-size:2.6rem;font-weight:800;line-height:1}
+.tile .m{display:flex;gap:5px;align-items:center;height:10px}
+.tile .m i{display:block;height:9px;background:var(--signal)}
+.tile .m i.d{width:9px}.tile .m i.l{width:26px}
+.hints-off .m{visibility:hidden}
+.word.ok .tile{background:var(--ok);border-color:var(--ok);color:#fff}
+.word.ok .m i{background:#fff}
+.word.bad{animation:shake .4s}
+.word.bad .tile{border-color:var(--bad)}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.fb{min-height:1.6em;font-weight:600;margin-bottom:22px}
+.fb.ok{color:var(--ok)}.fb.bad{color:var(--bad)}
+.row{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+label{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:.9rem;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.loader span,.word.bad{animation:none}.loader span{opacity:.7}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Morse Word Game</h1>
+    <div class="pills">
+      <div class="pill" id="pBroker"><i></i>Server</div>
+      <div class="pill" id="pBoard"><i></i><span id="bTxt">Boards</span></div>
+    </div>
+  </header>
+
+  <section id="waiting">
+    <h2>Waiting for the board to connect</h2>
+    <p>Plug in the Arduino and wait for it to join WiFi. The game starts as soon as the board comes online.</p>
+    <div class="loader" aria-hidden="true"><span class="d"></span><span class="l"></span><span class="d"></span><span class="l"></span><span class="d"></span></div>
+    <p id="net" role="status">Connecting to the server…</p>
+  </section>
+
+  <section id="game" class="hidden">
+    <div class="layout">
+      <div class="play">
+        <div class="label">Spell this word in Morse, then press the send button</div>
+        <div class="word" id="word" aria-live="polite"></div>
+        <div class="fb" id="fb" role="status"></div>
+        <div class="row">
+          <label><input type="checkbox" id="hintBox" checked> Show Morse hints</label>
+        </div>
+      </div>
+      <aside class="lb" aria-label="Leaderboard">
+        <div class="lb-h"><span>Players</span><span id="lbCount">0</span></div>
+        <ol id="players"></ol>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script>
+// ---------- settings (topics must match the Arduino code) ----------
+const CFG = {
+  url: "wss://broker.hivemq.com:8884/mqtt",   // same public broker as mqtt-dashboard.com
+  base: "pc/morse"    // boards publish to  pc/morse/<board id>/word  and  pc/morse/<board id>/status
+};
+
+const WORDS = ["CAT","DOG","SUN","MOON","STAR","FISH","BIRD","CAKE","TREE","RAIN","BOOK","MILK",
+  "CHEESE","APPLE","BREAD","LIGHT","WATER","HOUSE","SMILE","CLOUD","ROBOT","PIZZA","MUSIC","TIGER",
+  "BEACH","GREEN","SNAKE","PLANET"];
+
+const MORSE = {A:".-",B:"-...",C:"-.-.",D:"-..",E:".",F:"..-.",G:"--.",H:"....",I:"..",J:".---",
+  K:"-.-",L:".-..",M:"--",N:"-.",O:"---",P:".--.",Q:"--.-",R:".-.",S:"...",T:"-",U:"..-",V:"...-",
+  W:".--",X:"-..-",Y:"-.--",Z:"--.."};
+
+const $ = id => document.getElementById(id);
+const players = {};   // board id -> { score, tries, online }
+let current = "", playing = false, locked = false;
+
+function player(id) { return players[id] || (players[id] = { score: 0, tries: 0, online: false }); }
+
+function renderPlayers() {
+  const list = $("players");
+  list.innerHTML = "";
+  const online = Object.keys(players).filter(id => players[id].online)
+    .sort((a, b) => players[b].score - players[a].score || a.localeCompare(b));
+  if (!online.length) {
+    const li = document.createElement("li");
+    li.className = "empty"; li.textContent = "No players online";
+    list.appendChild(li);
+  }
+  online.forEach((id, i) => {
+    const li = document.createElement("li");
+    const rk = document.createElement("span"); rk.className = "rk"; rk.textContent = i + 1;
+    const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = id;
+    const sc = document.createElement("b"); sc.className = "sc"; sc.textContent = players[id].score;
+    li.append(rk, nm, sc);
+    list.appendChild(li);
+  });
+  $("lbCount").textContent = online.length;
+  $("bTxt").textContent = online.length + " online";
+  pill("pBoard", online.length ? "on" : "");
+}
+
+// ---------- game ----------
+function nextWord() {
+  let w;
+  do { w = WORDS[Math.floor(Math.random() * WORDS.length)]; } while (w === current && WORDS.length > 1);
+  current = w;
+  const box = $("word");
+  box.className = "word";
+  box.innerHTML = "";
+  for (const ch of w) {
+    const t = document.createElement("div");
+    t.className = "tile";
+    const c = document.createElement("div");
+    c.className = "ch"; c.textContent = ch;
+    const m = document.createElement("div");
+    m.className = "m";
+    for (const s of MORSE[ch]) {
+      const i = document.createElement("i");
+      i.className = s === "." ? "d" : "l";
+      m.appendChild(i);
+    }
+    t.append(c, m);
+    box.appendChild(t);
+  }
+  setFb("", "");
+  locked = false;
+}
+
+function setFb(text, cls) { const f = $("fb"); f.textContent = text; f.className = "fb " + cls; }
+
+function startGame() {
+  if (playing) return;
+  playing = true;
+  $("waiting").classList.add("hidden");
+  $("game").classList.remove("hidden");
+  nextWord();
+}
+
+function judge(id, sent) {
+  if (!playing || locked) return;
+  sent = sent.trim().toUpperCase();
+  if (!sent) return;
+  const p = player(id);
+  p.tries++;
+  if (sent === current) {
+    p.score++;
+    renderPlayers();
+    locked = true;                        // first board to get it wins the point
+    $("word").className = "word ok";
+    setFb(id + " got it! +1 point", "ok");
+    setTimeout(nextWord, 1800);
+  } else {
+    const box = $("word");
+    box.className = "word";
+    void box.offsetWidth;                 // restart the shake animation
+    box.className = "word bad";
+    setFb(id + " sent \u201C" + sent + "\u201D. Try again.", "bad");
+  }
+}
+
+$("hintBox").onchange = e => $("word").parentElement.classList.toggle("hints-off", !e.target.checked);
+
+// ---------- connection pills ----------
+function pill(id, state) { $(id).className = "pill " + state; }
+
+// ---------- MQTT ----------
+function setNet(t) { $("net").textContent = t; }
+if (typeof mqtt === "undefined") {
+  setNet("Couldn\u2019t load the MQTT library. Check your internet connection, then reload the page.");
+  throw new Error("mqtt.js did not load");
+}
+let client = null;
+
+function connectMqtt() {
+  if (client) return;
+  setNet("Connecting to the server\u2026");
+  pill("pBroker", "wait");
+  client = mqtt.connect(CFG.url, {
+    clientId: "morse-game-" + Math.random().toString(16).slice(2, 8),
+    reconnectPeriod: 3000
+  });
+  attach(client);
+}
+
+renderPlayers();
+connectMqtt();                            // connect right away when the page opens
+
+function attach(client) {
+
+client.on("connect", () => {
+  pill("pBroker", "on");
+  setNet("Connected to the server. Waiting for the board\u2026");
+  client.subscribe([CFG.base + "/+/word", CFG.base + "/+/status"]);
+});
+client.on("reconnect", () => { pill("pBroker", "wait"); setNet("Reconnecting to the server\u2026"); });
+client.on("close", () => pill("pBroker", ""));
+client.on("error", e => setNet("Can\u2019t reach the server (" + e.message + "). Your network may be blocking port 8884."));
+
+client.on("message", (topic, payload) => {
+  const msg = payload.toString().trim();
+  const parts = topic.split("/");         // e.g. pc/morse/board1/word
+  const kind = parts[parts.length - 1];
+  const id = parts[parts.length - 2];
+  const p = player(id);
+  if (kind === "status") {
+    p.online = msg.toLowerCase() === "online";
+    renderPlayers();
+    if (p.online) startGame();
+  } else if (kind === "word") {
+    if (!p.online) { p.online = true; renderPlayers(); }
+    if (!playing) startGame();            // a word arrived, so the board is clearly there
+    else judge(id, msg);
+  }
+});
+}
+</script>
+</body>
+</html>
