@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morse Word Game: Arduino + MQTT</title>
+<meta name="description" content="67676767">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#fffffb;--ink:#000000;--muted:#000000;--signal:#000000;--line:#000000}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Noto Sans Thai",system-ui,sans-serif;line-height:1.75}
+a{color:var(--signal)}
+.wrap{max-width:820px;margin:0 auto;padding:0 20px}
+nav{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 0}
+nav div{display:flex;gap:18px;font-size:.95rem}
+nav a{color:var(--ink);text-decoration:none;font-weight:600}
+nav a:hover{color:var(--signal)}
+.hero{padding:44px 0 34px}
+.dots{display:flex;gap:8px;margin-bottom:20px}
+.dots i{display:block;height:12px;background:var(--signal)}
+.dots .d{width:12px}.dots .l{width:36px}
+h1{font-size:clamp(1.9rem,5.5vw,3rem);line-height:1.25;font-weight:800;margin:0 0 16px}
+.lead{font-size:1.1rem;color:var(--muted);max-width:60ch;margin:0 0 24px}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-block;font-weight:600;text-decoration:none;padding:11px 20px;border:1.5px solid var(--ink);color:var(--ink)}
+.btn.main{background:var(--signal);border-color:var(--signal);color:#fff}
+.btn:hover{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn:focus-visible,a:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+section{padding:32px 0;border-top:1.5px solid var(--line)}
+h2{font-size:1.5rem;font-weight:800;margin:0 0 14px}
+h3{font-size:1.05rem;margin:22px 0 6px}
+p{margin:0 0 14px;max-width:68ch}
+ul.feat{list-style:none;padding:0;margin:0 0 6px;display:grid;gap:10px;max-width:68ch;counter-reset:f}
+ul.feat li{counter-increment:f;background:#fff;border:1.5px solid var(--line);padding:12px 16px 12px 56px;position:relative}
+ul.feat li::before{content:counter(f);position:absolute;left:16px;top:13px;width:28px;height:28px;background:var(--signal);color:#fff;font-weight:700;display:grid;place-items:center;font-size:.85rem}
+ul.feat b{display:block}
+ol.steps{padding:0;list-style:none;counter-reset:s;display:grid;gap:12px;max-width:68ch;margin:0 0 10px}
+ol.steps li{counter-increment:s;padding-left:46px;position:relative}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:2px;width:32px;height:32px;background:var(--ink);color:#fff;font-weight:700;display:grid;place-items:center;font-size:.9rem}
+.flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 18px}
+.flow span{background:#fff;border:1.5px solid var(--ink);padding:10px 16px;font-weight:600;font-size:.93rem}
+.flow b{color:var(--signal);font-size:1.3rem}
+.scroll{overflow-x:auto;margin-bottom:12px}
+table{width:100%;border-collapse:collapse;background:#fff;border:1.5px solid var(--line);font-size:.95rem}
+th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:#F1F3FA}tr:last-child td{border-bottom:none}
+code,pre{font-family:"Space Mono",ui-monospace,monospace;font-size:.85rem}
+code{background:#fff;border:1px solid var(--line);padding:1px 6px}
+pre{background:var(--ink);color:#E8ECF6;padding:14px 16px;overflow-x:auto;margin:0 0 12px;line-height:1.6}
+.note{background:#fff;border-left:4px solid var(--signal);padding:12px 16px;max-width:68ch}
+footer{padding:26px 0 46px;color:var(--muted);font-size:.9rem;border-top:1.5px solid var(--line)}
+.kw{color:var(--muted)}
+details{margin:0 0 14px}
+summary{cursor:pointer;font-weight:600;padding:8px 0}
+pre.code{max-height:520px;overflow:auto;font-size:.76rem;line-height:1.5;white-space:pre;tab-size:2}
+pre.code code{background:none;border:0;padding:0;color:inherit;font-size:inherit}
+.video{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;border:1.5px solid var(--line)}
+.video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <b>Morse Word Game</b>
+    <div><a href="#about">About</a><a href="#source">Source Code</a></div>
+    <a class="btn" href="https://github.com/chiratchanon/PCPROJECT_morsewordgame.git" target="_blank" rel="noopener">GitHub</a>
+    <a class="btn" href="https://www.youtube.com/watch?v=wXPy2U3_w0A&t=13s" target="_blank" rel="noopener">Video</a>  
+    <a class="btn" href="game.html">Play</a>
+  </nav>
+
+  <section id="">
+    <p2> .... / . / .-.. / .-.. / --- </p2>
+    <h1>Morse Word Game</h1>
+    <h2>บทคัดย่อ</h2>
+    <p>โปรเจกต์ Morse Word Game พัฒนาขึ้นเพื่อศึกษาการแปลงเสียงเป็นรหัสมอร์สด้วย Microcontroller และการเชื่อมต่ออุปกรณ์เข้ากับเว็บผ่านอินเทอร์เน็ต ระบบใช้บอร์ด Arduino UNO R4 WiFi ร่วมกับ MAX4466 วัดความดังของเสียงและใช้ความยาวของเสียง(ms) แยกจุด-ขีด จากนั้นแปลงเป็นตัวอักษรและแสดงบนจอ LCD</p>
+    <p>เกมบนเว็บจะสุ่มคำ รับคำตอบจากแต่ละบอร์ดซึ่งแยกกันด้วย ID ตรวจความถูกต้อง และให้คะแนน ผลที่ได้คือระบบที่ผู้เล่นสะกดคำด้วยเสียงและเล่นแข่งกันได้หลายบอร์ด</p>
+  </section>
+
+  <section id="about">
+    <h2>เกี่ยวกับโปรเจกต์</h2>
+    <h3>ที่มาและเป้าหมาย</h3>
+    <p>Morse Code คือ วิธีการเข้ารหัสและส่งข้อความระยะไกล โดยเปลี่ยนตัวอักษร ตัวเลข หรือเครื่องหมายวรรคตอน ให้กลายเป็นชุดสัญญาณที่มีสั้น (.) และยาว (-) ซึ่งสามารถส่งผ่านเสียงเคาะ แสงไฟ หรือการกะพริบตาได้</p>
+    <p>เป้าหมายของโปรเจกต์คือเพื่อการศึกษาเกี่ยวกับรหัสมอร์ส ทำให้การเรียนรู้รหัสมอร์ส มีความน่าสนใจมากขึ้น</p>
+  </section>
+
+  <section id="how">
+    <h2>วิธีทำงาน</h2>
+    <div class="flow" aria-label="เสียงของคุณ ไปยัง Arduino ไปยังเซิร์ฟเวอร์ MQTT ไปยังเกมบนเว็บ">
+      <span>Audio</span><b>→</b><span>Arduino R4 WiFi</span><b>→</b><span>MQTT Server</span><b>→</b><span>WebGame</span>
+    </div>
+    <h3>วิธีอ่านรหัสมอร์สจากเสียง</h3>
+    <p>Arduino จะวัดความดังของเสียงทุก 50ms โดยใช้ผลต่างระหว่าง MIN - MAX ถ้าเกินค่าที่กำหนดถือว่ามีเสียง แล้วใช้ความยาวของเสียงตัดสินว่าเป็นสั้น (.) หรือยาว (-)</p>
+    <h3>MQTT & WebGame</h3>
+    <p>เมื่อกดปุ่มส่ง บอร์ด Arduino จะส่งคำไปยังเซิร์ฟเวอร์ MQTT สาธารณะของ HiveMQ โดยใช้หัวข้อที่มี ID ของบอร์ด เพื่อให้เกมรู้ว่าคำมาจากบอร์ดไหน และตรวจสอบความถูกต้องพร้อมให้คะแนนให้กับบอร์ดแรกที่ตอบถูก</p>
+    <p>โดยที่ WebGame จะเชื่อมต่อกับเซิร์ฟเวอร์เดียวกันผ่าน WebSocket สุ่มคำให้ผู้เล่น แสดงรหัสมอร์สไว้ใต้แต่ละตัวอักษรเป็นตัวช่วย ตรวจคำที่บอร์ด Arduino ส่งมา และแสดงตารางคะแนนของแต่ละบอร์ด เกมจะเริ่มต่อเมื่อมีอย่างน้อย 1 บอร์ดออนไลน์</p>
+  </section>
+
+  <section id="how">
+    <h2>อุปกรณ์</h2>
+    <div class="scroll"><table>
+      <tr><th>อุปกรณ์</th><th>หน้าที่</th></tr>
+      <tr><td>Arduino UNO R4 WiFi</td><td>ตัวประมวลผลหลักและเชื่อมต่อกับ WiFi</td></tr>
+      <tr><td>MAX4466</td><td>ตัวรับเสียงเข้าบอร์ด</td></tr>
+      <tr><td>Potentiometer</td><td>ใช้เปิด-ปิดไมค์</td></tr>
+      <tr><td>LED</td><td>ให้สัญญานว่ามีเสียงเข้าไมค์</td></tr>
+      <tr><td>Button1</td><td>ลบตัวอักษร</td></tr>
+      <tr><td>Button2</td><td>ส่งตัวอักษรเข้า MQTT</td></tr>
+      <tr><td>LCD I2C (16x2)</td><td>แสดงผลตัวอักษรต่าง ๆ</td></tr>
+    </table></div>
+  </section>
+
+  <section id="prob">
+    <h2>ปัญหาที่เจอและแนวทางพัฒนาต่อ</h2>
+    <div class="scroll"><table>
+      <tr><th>ปัญหา</th><th>การแก้ไข</th></tr>
+      <tr><td>ไมค์ Sensitive เกินไป</td><td>เซ็ตค่า threshold และ gain ของไมค์ และเพิ่มการกรองสัญญาณให้เสียงสั้นๆ ที่เป็นสัญญาณรบกวนไม่ถูกนับ</td></tr>
+      <tr><td>เว็บแยกไม่ได้ว่าคำมาจากบอร์ดไหน</td><td>ให้แต่ละบอร์ดมี BOARD_ID</td></tr>
+      <tr><td>แยกจุด-ขีดโดยการ Frequency ของงเสียงพูดแต่ได้ผลลัพธ์ไม่คงที่</td><td>เปลี่ยนมาใช้ความยาวของเสียงแทน ซึ่งง่ายและแม่นยำกว่า</td></tr>
+      <tr><td>อุปกรณ์ไม่เพียงพอ</td><td>Improvise อุปกรณ์เช่น ใช้ Potentiometer ในการเปิด-ปิดไมค์แทนปุ่มหรือสวิซต์</td></tr>
+    </table></div>
+  </section>
+
+  <section id="source">
+    <h2>Source Code</h2>
+    <div class="btns" style="margin-bottom:18px">
+      <a class="btn" href="morse-board.ino" download>morse-board.ino</a>
+      <a class="btn" href="game.html" download>game.html</a>
+    </div>
+    <details open>
+      <summary>1. Arduino (morse-board.ino)</summary>
+      <pre class="code"><code>#include &lt;Wire.h&gt;
+#include &lt;LiquidCrystal_I2C.h&gt;
+#include &lt;WiFiS3.h&gt;
+#include &lt;PubSubClient.h&gt;
+
+// ---------- Board ----------
+const char* BOARD_ID = &quot;board1&quot;;   // board2, board3... must be different on every board
+
+// ---------- WiFi ----------
+const char* WIFI_SSID     = &quot;YOUR_WIFI_NAME&quot;;
+const char* WIFI_PASSWORD = &quot;YOUR_WIFI_PASSWORD&quot;;
+
+// ---------- MQTT ----------
+const char* MQTT_BROKER = &quot;mqtt-dashboard.com&quot;;
+const int   MQTT_PORT   = 1883;
+String wordTopic;                  // pc/morse/&lt;board id&gt;/word
+String statusTopic;                // pc/morse/&lt;board id&gt;/status
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);    // change to 0x3F if nothing shows
+WiFiClient wifiClient;
+PubSubClient client(wifiClient);
+
+const int micPin = A0;
+const int potPin = A1;                 // mic on/off knob (middle leg)
+const int ledPin = 2;
+const int deletePin = 3;               // delete button (other leg to GND)
+const int sendPin = 4;                 // send button (other leg to GND)
+const int sampleWindow = 50;           // ms
+const int threshold = 100;             // adjust for your room
+
+const int potOn  = 600;                // knob above this = mic ON
+const int potOff = 400;                // knob below this = mic OFF
+
+const unsigned long dashTime     = 400;   // longer than this = &quot;-&quot;, shorter = &quot;.&quot;
+const unsigned long soundEndGap  = 150;   // silence this long ends a sound
+const unsigned long letterGap    = 900;   // silence this long ends a letter
+const unsigned long wordGap      = 2000;  // silence this long = space (Serial only)
+const unsigned long debounceMs   = 50;
+
+const bool debug = false;              // true = print loudness in Serial Monitor
+
+const char* letters[] = {
+  &quot;.-&quot;, &quot;-...&quot;, &quot;-.-.&quot;, &quot;-..&quot;, &quot;.&quot;, &quot;..-.&quot;, &quot;--.&quot;, &quot;....&quot;, &quot;..&quot;, &quot;.---&quot;,
+  &quot;-.-&quot;, &quot;.-..&quot;, &quot;--&quot;, &quot;-.&quot;, &quot;---&quot;, &quot;.--.&quot;, &quot;--.-&quot;, &quot;.-.&quot;, &quot;...&quot;, &quot;-&quot;,
+  &quot;..-&quot;, &quot;...-&quot;, &quot;.--&quot;, &quot;-..-&quot;, &quot;-.--&quot;, &quot;--..&quot;
+};
+const char* digits[] = {
+  &quot;-----&quot;, &quot;.----&quot;, &quot;..---&quot;, &quot;...--&quot;, &quot;....-&quot;,
+  &quot;.....&quot;, &quot;-....&quot;, &quot;--...&quot;, &quot;---..&quot;, &quot;----.&quot;
+};
+
+bool micOn = true;
+bool inSound = false;
+bool wordSpaceSent = true;
+unsigned long soundStart = 0, lastLoud = 0, lastEnd = 0;
+unsigned long statusUntil = 0;         // when to clear the status text on row 1
+String code = &quot;&quot;;
+String message = &quot;&quot;;                   // all decoded letters (LCD shows the last 16)
+
+struct Button {
+  int pin;
+  bool lastReading;
+  bool state;
+  unsigned long lastChange;
+};
+Button deleteBtn = {deletePin, HIGH, HIGH, 0};
+Button sendBtn   = {sendPin,   HIGH, HIGH, 0};
+
+// Returns true once each time the button is pressed (debounced)
+bool pressedEvent(Button &amp;b) {
+  bool reading = digitalRead(b.pin);
+  unsigned long now = millis();
+  if (reading != b.lastReading) b.lastChange = now;
+  b.lastReading = reading;
+
+  if (now - b.lastChange &gt; debounceMs &amp;&amp; reading != b.state) {
+    b.state = reading;
+    if (b.state == LOW) return true;
+  }
+  return false;
+}
+
+char decodeMorse(const String &amp;c) {
+  for (int i = 0; i &lt; 26; i++) if (c == letters[i]) return &#x27;A&#x27; + i;
+  for (int i = 0; i &lt; 10; i++) if (c == digits[i])  return &#x27;0&#x27; + i;
+  return &#x27;?&#x27;;
+}
+
+// Shows the last 16 decoded letters on row 2
+void updateLCD() {
+  String shown = message;
+  if (shown.length() &gt; 16) shown = shown.substring(shown.length() - 16);
+  lcd.setCursor(0, 1);
+  lcd.print(shown);
+  for (int i = shown.length(); i &lt; 16; i++) lcd.print(&#x27; &#x27;);
+}
+
+void addToMessage(char c) {
+  message += c;
+  if (message.length() &gt; 100) message.remove(0, message.length() - 100);
+}
+
+// Shows a short status on row 1 for 1.5 seconds
+void showStatus(const char *text) {
+  lcd.setCursor(0, 0);
+  lcd.print(text);
+  for (int i = strlen(text); i &lt; 16; i++) lcd.print(&#x27; &#x27;);
+  statusUntil = millis() + 1500;
+}
+
+void clearStatusIfDue() {
+  if (statusUntil &amp;&amp; millis() &gt; statusUntil) {
+    lcd.setCursor(0, 0);
+    lcd.print(&quot;                &quot;);
+    statusUntil = 0;
+  }
+}
+
+bool connectWiFi() {
+  if (WiFi.status() == WL_CONNECTED) return true;
+
+  Serial.print(&quot;Connecting to WiFi&quot;);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  unsigned long t = millis();
+  while (WiFi.status() != WL_CONNECTED &amp;&amp; millis() - t &lt; 10000) {
+    delay(500);
+    Serial.print(&quot;.&quot;);
+  }
+  Serial.println();
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println(&quot;WiFi failed.&quot;);
+    return false;
+  }
+  Serial.print(&quot;WiFi connected, IP: &quot;);
+  Serial.println(WiFi.localIP());
+  return true;
+}
+
+bool connectMQTT() {
+  if (client.connected()) return true;
+
+  Serial.print(&quot;Connecting to MQTT...&quot;);
+  String clientId = String(&quot;uno_r4_morse_&quot;) + BOARD_ID;
+  // last will: if this board disappears, the broker publishes &quot;offline&quot;
+  if (client.connect(clientId.c_str(), NULL, NULL, statusTopic.c_str(), 0, true, &quot;offline&quot;)) {
+    Serial.println(&quot;connected&quot;);
+    client.publish(statusTopic.c_str(), &quot;online&quot;, true);   // retained, so the game page sees it
+    return true;
+  }
+  Serial.print(&quot;failed, rc=&quot;);
+  Serial.println(client.state());
+  return false;
+}
+
+// Connects to WiFi and MQTT if needed. Returns true if ready to send.
+bool connectNetwork() {
+  return connectWiFi() &amp;&amp; connectMQTT();
+}
+
+void sendWord() {
+  if (message.length() == 0) {
+    Serial.println(&quot;Nothing to send.&quot;);
+    showStatus(&quot;Nothing to send&quot;);
+    return;
+  }
+
+  showStatus(&quot;Sending...&quot;);
+  if (!connectNetwork()) {
+    showStatus(&quot;Send failed&quot;);
+    return;
+  }
+
+  if (client.publish(wordTopic.c_str(), message.c_str())) {
+    Serial.print(&quot;Sent to &quot;);
+    Serial.print(wordTopic);
+    Serial.print(&quot;: &quot;);
+    Serial.println(message);
+    message = &quot;&quot;;                      // start a fresh word
+    updateLCD();
+    showStatus(&quot;Sent!&quot;);
+  } else {
+    Serial.println(&quot;Publish failed.&quot;);
+    showStatus(&quot;Send failed&quot;);
+  }
+}
+
+// Checks both buttons
+void checkButtons() {
+  if (pressedEvent(deleteBtn) &amp;&amp; message.length() &gt; 0) {
+    message.remove(message.length() - 1);
+    Serial.print(&quot;Deleted. Text is now: &quot;);
+    Serial.println(message);
+    updateLCD();
+  }
+  if (pressedEvent(sendBtn)) {
+    sendWord();
+  }
+}
+
+// Reads the knob and turns the mic ON/OFF
+void checkMicSwitch() {
+  analogRead(potPin);                  // dummy read lets the ADC settle
+  int v = analogRead(potPin);
+
+  if (!micOn &amp;&amp; v &gt; potOn) {
+    micOn = true;
+    Serial.println(&quot;Mic ON&quot;);
+  } else if (micOn &amp;&amp; v &lt; potOff) {
+    micOn = false;
+    inSound = false;
+    code = &quot;&quot;;
+    wordSpaceSent = true;
+    digitalWrite(ledPin, LOW);
+    Serial.println(&quot;Mic OFF&quot;);
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(ledPin, OUTPUT);
+  pinMode(deletePin, INPUT_PULLUP);
+  pinMode(sendPin, INPUT_PULLUP);
+  analogReadResolution(10);
+
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+
+  wordTopic   = String(&quot;pc/morse/&quot;) + BOARD_ID + &quot;/word&quot;;
+  statusTopic = String(&quot;pc/morse/&quot;) + BOARD_ID + &quot;/status&quot;;
+  client.setServer(MQTT_BROKER, MQTT_PORT);
+
+  lcd.setCursor(0, 0);
+  lcd.print(&quot;Connecting...&quot;);
+  if (connectNetwork()) showStatus(&quot;Online&quot;);
+  else showStatus(&quot;Offline&quot;);
+
+  micOn = true;                        // start ON, then let the knob decide
+  checkMicSwitch();
+
+  Serial.print(&quot;Board ID: &quot;);
+  Serial.println(BOARD_ID);
+  Serial.println(&quot;Ready. Short sound = dot, long sound = dash.&quot;);
+  Serial.println(&quot;Button 3 = delete, button 4 = send, knob = mic on/off.&quot;);
+}
+
+void loop() {
+  client.loop();                       // keeps the MQTT connection alive
+  clearStatusIfDue();
+  checkMicSwitch();
+
+  // Mic is off: ignore sound, but the buttons still work
+  if (!micOn) {
+    checkButtons();
+    delay(10);
+    return;
+  }
+
+  // Measure loudness over 50 ms (buttons are checked during this too)
+  unsigned long start = millis();
+  int signalMax = 0, signalMin = 1023;
+  while (millis() - start &lt; sampleWindow) {
+    int s = analogRead(micPin);
+    if (s &gt; signalMax) signalMax = s;
+    if (s &lt; signalMin) signalMin = s;
+    checkButtons();
+  }
+  int level = signalMax - signalMin;
+  if (debug) Serial.println(level);
+
+  bool loud = level &gt; threshold;
+  unsigned long now = millis();
+  digitalWrite(ledPin, loud ? HIGH : LOW);
+
+  if (loud) {
+    if (!inSound) {
+      inSound = true;
+      soundStart = now - sampleWindow;
+    }
+    lastLoud = now;
+  }
+
+  // Sound ended -&gt; decide dot or dash
+  if (inSound &amp;&amp; now - lastLoud &gt; soundEndGap) {
+    unsigned long duration = lastLoud - soundStart;
+    char symbol = (duration &lt; dashTime) ? &#x27;.&#x27; : &#x27;-&#x27;;
+    if (code.length() &lt; 7) code += symbol;
+    Serial.print(symbol);
+    Serial.print(&quot;  (&quot;);
+    Serial.print(duration);
+    Serial.println(&quot; ms)&quot;);
+    inSound = false;
+    lastEnd = lastLoud;
+    wordSpaceSent = false;
+  }
+
+  // Quiet long enough -&gt; decode the letter and show it
+  if (!inSound &amp;&amp; code.length() &gt; 0 &amp;&amp; now - lastEnd &gt; letterGap) {
+    char letter = decodeMorse(code);
+    Serial.print(code);
+    Serial.print(&quot;  -&gt;  &quot;);
+    Serial.println(letter);
+    addToMessage(letter);
+    code = &quot;&quot;;
+    updateLCD();
+  }
+
+  // Quiet much longer -&gt; word space (Serial Monitor only)
+  if (!inSound &amp;&amp; code.length() == 0 &amp;&amp; !wordSpaceSent &amp;&amp; now - lastEnd &gt; wordGap) {
+    Serial.println(&quot;[space]&quot;);
+    wordSpaceSent = true;
+  }
+}
+</code></pre>
+    </details>
+    <details open>
+      <summary>2. WebGame (game.html)</summary>
+      <pre class="code"><code>&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;title&gt;Morse Word Game&lt;/title&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&amp;family=Space+Mono:wght@400;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+:root{--paper:#E8ECF6;--ink:#151B3B;--muted:#5B6385;--signal:#3D35C9;--ok:#12805C;--bad:#D6393F;--tile:#fff;--line:#C9D0E6}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:Sora,system-ui,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:24px 16px}
+main{width:100%;max-width:760px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:40px}
+h1{font-size:1.05rem;font-weight:800;margin:0;letter-spacing:.01em}
+.pills{display:flex;gap:8px}
+.pill{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:99px;padding:5px 12px;font-size:.8rem;background:#fff}
+.pill i{width:9px;height:9px;border-radius:50%;background:#aab0cc}
+.pill.on i{background:var(--ok)}
+.pill.wait i{background:#E0A100}
+h2{font-size:clamp(1.6rem,5vw,2.4rem);font-weight:800;margin:0 0 12px;line-height:1.15}
+p{color:var(--muted);margin:0 0 20px;line-height:1.5;max-width:56ch}
+.loader{display:flex;align-items:center;gap:10px;margin:28px 0}
+.loader span{display:block;height:12px;border-radius:6px;background:var(--signal);opacity:.25;animation:blink 1.8s infinite}
+.loader .d{width:12px}.loader .l{width:36px}
+.loader span:nth-child(2){animation-delay:.3s}.loader span:nth-child(3){animation-delay:.6s}
+.loader span:nth-child(4){animation-delay:.9s}.loader span:nth-child(5){animation-delay:1.2s}
+@keyframes blink{0%,100%{opacity:.25}30%{opacity:1}}
+button{font:inherit;font-weight:600;cursor:pointer;border-radius:10px;padding:10px 18px;border:1.5px solid var(--ink);background:transparent;color:var(--ink)}
+button:hover{background:var(--ink);color:#fff}
+button:focus-visible,input:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+.hidden{display:none!important}
+#codeIn{font:inherit;font-size:.8rem;width:150px;padding:5px 12px;border:1.5px solid var(--line);border-radius:99px;background:#fff;color:var(--ink)}
+#codeIn:disabled{background:transparent;color:var(--muted)}
+.score{display:flex;gap:36px;margin-bottom:36px}
+.score div{display:flex;flex-direction:column}
+.score b{font-size:2.6rem;font-weight:800;line-height:1}
+.score small{color:var(--muted);font-size:.85rem;margin-top:6px}
+.players{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:34px}
+.pl{display:flex;align-items:baseline;gap:12px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px 16px}
+.pl .pn{font-size:.9rem;color:var(--muted)}
+.pl b{font-size:1.9rem;font-weight:800;line-height:1}
+.pl.on{border-color:var(--ok)}
+.pl:not(.on){opacity:.55}
+.empty{color:var(--muted);font-size:.9rem}
+.label{color:var(--muted);font-size:.9rem;margin-bottom:14px}
+.word{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px}
+.tile{background:var(--tile);border:1.5px solid var(--line);border-radius:12px;padding:14px 10px 12px;min-width:64px;display:flex;flex-direction:column;align-items:center;gap:12px;transition:background .25s,border-color .25s,color .25s}
+.tile .ch{font-size:2.6rem;font-weight:800;line-height:1}
+.tile .m{display:flex;gap:5px;align-items:center;height:10px}
+.tile .m i{display:block;height:9px;border-radius:5px;background:var(--signal)}
+.tile .m i.d{width:9px}.tile .m i.l{width:26px}
+.hints-off .m{visibility:hidden}
+.word.ok .tile{background:var(--ok);border-color:var(--ok);color:#fff}
+.word.ok .m i{background:#fff}
+.word.bad{animation:shake .4s}
+.word.bad .tile{border-color:var(--bad)}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.fb{min-height:1.6em;font-weight:600;margin-bottom:22px}
+.fb.ok{color:var(--ok)}.fb.bad{color:var(--bad)}
+.row{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+label{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:.9rem;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.loader span,.word.bad{animation:none}.loader span{opacity:.7}}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;main&gt;
+  &lt;header&gt;
+    &lt;h1&gt;Morse Word Game&lt;/h1&gt;
+    &lt;div class=&quot;pills&quot;&gt;
+      &lt;div class=&quot;pill&quot; id=&quot;pBroker&quot;&gt;&lt;i&gt;&lt;/i&gt;Server&lt;/div&gt;
+      &lt;div class=&quot;pill&quot; id=&quot;pBoard&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;span id=&quot;bTxt&quot;&gt;Boards&lt;/span&gt;&lt;/div&gt;
+      &lt;input id=&quot;codeIn&quot; placeholder=&quot;game code&quot; maxlength=&quot;24&quot; aria-label=&quot;Game code&quot; autocomplete=&quot;off&quot; spellcheck=&quot;false&quot;&gt;
+      &lt;button id=&quot;connBtn&quot; style=&quot;padding:5px 14px;font-size:.8rem&quot;&gt;Connect&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/header&gt;
+
+  &lt;section id=&quot;waiting&quot;&gt;
+    &lt;h2&gt;Waiting for the board to connect&lt;/h2&gt;
+    &lt;p&gt;Plug in the Arduino and wait for it to join WiFi. The game starts as soon as the board comes online.&lt;/p&gt;
+    &lt;div class=&quot;loader&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;d&quot;&gt;&lt;/span&gt;&lt;span class=&quot;l&quot;&gt;&lt;/span&gt;&lt;span class=&quot;d&quot;&gt;&lt;/span&gt;&lt;span class=&quot;l&quot;&gt;&lt;/span&gt;&lt;span class=&quot;d&quot;&gt;&lt;/span&gt;&lt;/div&gt;
+    &lt;p id=&quot;net&quot; role=&quot;status&quot;&gt;Press Connect to join the server.&lt;/p&gt;
+    &lt;button id=&quot;startBtn&quot;&gt;Start without the board&lt;/button&gt;
+  &lt;/section&gt;
+
+  &lt;section id=&quot;game&quot; class=&quot;hidden&quot;&gt;
+    &lt;div class=&quot;players&quot; id=&quot;players&quot; aria-label=&quot;Scores by board&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;label&quot;&gt;Spell this word in Morse, then press the send button&lt;/div&gt;
+    &lt;div class=&quot;word&quot; id=&quot;word&quot; aria-live=&quot;polite&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;fb&quot; id=&quot;fb&quot; role=&quot;status&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;row&quot;&gt;
+      &lt;button id=&quot;skipBtn&quot;&gt;Skip word&lt;/button&gt;
+      &lt;label&gt;&lt;input type=&quot;checkbox&quot; id=&quot;hintBox&quot; checked&gt; Show Morse hints&lt;/label&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+&lt;/main&gt;
+
+&lt;script src=&quot;https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+// ---------- settings (topics must match the Arduino code) ----------
+const CFG = {
+  url: &quot;wss://broker.hivemq.com:8884/mqtt&quot;,   // same public broker as mqtt-dashboard.com
+  base: &quot;pc/morse&quot;    // boards publish to  pc/morse/&lt;board id&gt;/word  and  pc/morse/&lt;board id&gt;/status
+};
+const WORDS = [&quot;CAT&quot;,&quot;DOG&quot;,&quot;SUN&quot;,&quot;MOON&quot;,&quot;STAR&quot;,&quot;FISH&quot;,&quot;BIRD&quot;,&quot;CAKE&quot;,&quot;TREE&quot;,&quot;RAIN&quot;,&quot;BOOK&quot;,&quot;MILK&quot;,
+  &quot;CHEESE&quot;,&quot;APPLE&quot;,&quot;BREAD&quot;,&quot;LIGHT&quot;,&quot;WATER&quot;,&quot;HOUSE&quot;,&quot;SMILE&quot;,&quot;CLOUD&quot;,&quot;ROBOT&quot;,&quot;PIZZA&quot;,&quot;MUSIC&quot;,&quot;TIGER&quot;,
+  &quot;BEACH&quot;,&quot;GREEN&quot;,&quot;SNAKE&quot;,&quot;PLANET&quot;];
+const MORSE = {A:&quot;.-&quot;,B:&quot;-...&quot;,C:&quot;-.-.&quot;,D:&quot;-..&quot;,E:&quot;.&quot;,F:&quot;..-.&quot;,G:&quot;--.&quot;,H:&quot;....&quot;,I:&quot;..&quot;,J:&quot;.---&quot;,
+  K:&quot;-.-&quot;,L:&quot;.-..&quot;,M:&quot;--&quot;,N:&quot;-.&quot;,O:&quot;---&quot;,P:&quot;.--.&quot;,Q:&quot;--.-&quot;,R:&quot;.-.&quot;,S:&quot;...&quot;,T:&quot;-&quot;,U:&quot;..-&quot;,V:&quot;...-&quot;,
+  W:&quot;.--&quot;,X:&quot;-..-&quot;,Y:&quot;-.--&quot;,Z:&quot;--..&quot;};
+
+const $ = id =&gt; document.getElementById(id);
+const players = {};   // board id -&gt; { score, tries, online }
+let current = &quot;&quot;, playing = false, locked = false;
+
+function player(id) { return players[id] || (players[id] = { score: 0, tries: 0, online: false }); }
+
+function renderPlayers() {
+  const box = $(&quot;players&quot;);
+  box.innerHTML = &quot;&quot;;
+  const ids = Object.keys(players).sort((a, b) =&gt; players[b].score - players[a].score || a.localeCompare(b));
+  if (!ids.length) {
+    const e = document.createElement(&quot;div&quot;);
+    e.className = &quot;empty&quot;; e.textContent = &quot;No boards yet&quot;;
+    box.appendChild(e);
+  }
+  ids.forEach(id =&gt; {
+    const row = document.createElement(&quot;div&quot;);
+    row.className = &quot;pl&quot; + (players[id].online ? &quot; on&quot; : &quot;&quot;);
+    const n = document.createElement(&quot;span&quot;);
+    n.className = &quot;pn&quot;; n.textContent = id;
+    const s = document.createElement(&quot;b&quot;);
+    s.textContent = players[id].score;
+    row.append(n, s);
+    box.appendChild(row);
+  });
+  const online = ids.filter(i =&gt; players[i].online).length;
+  $(&quot;bTxt&quot;).textContent = online + (online === 1 ? &quot; board&quot; : &quot; boards&quot;);
+  pill(&quot;pBoard&quot;, online ? &quot;on&quot; : &quot;&quot;);
+}
+
+// ---------- game ----------
+function nextWord() {
+  let w;
+  do { w = WORDS[Math.floor(Math.random() * WORDS.length)]; } while (w === current &amp;&amp; WORDS.length &gt; 1);
+  current = w;
+  const box = $(&quot;word&quot;);
+  box.className = &quot;word&quot;;
+  box.innerHTML = &quot;&quot;;
+  for (const ch of w) {
+    const t = document.createElement(&quot;div&quot;);
+    t.className = &quot;tile&quot;;
+    const c = document.createElement(&quot;div&quot;);
+    c.className = &quot;ch&quot;; c.textContent = ch;
+    const m = document.createElement(&quot;div&quot;);
+    m.className = &quot;m&quot;;
+    for (const s of MORSE[ch]) {
+      const i = document.createElement(&quot;i&quot;);
+      i.className = s === &quot;.&quot; ? &quot;d&quot; : &quot;l&quot;;
+      m.appendChild(i);
+    }
+    t.append(c, m);
+    box.appendChild(t);
+  }
+  setFb(&quot;&quot;, &quot;&quot;);
+  locked = false;
+}
+
+function setFb(text, cls) { const f = $(&quot;fb&quot;); f.textContent = text; f.className = &quot;fb &quot; + cls; }
+
+function startGame() {
+  if (playing) return;
+  playing = true;
+  $(&quot;waiting&quot;).classList.add(&quot;hidden&quot;);
+  $(&quot;game&quot;).classList.remove(&quot;hidden&quot;);
+  nextWord();
+}
+
+function judge(id, sent) {
+  if (!playing || locked) return;
+  sent = sent.trim().toUpperCase();
+  if (!sent) return;
+  const p = player(id);
+  p.tries++;
+  if (sent === current) {
+    p.score++;
+    renderPlayers();
+    locked = true;                        // first board to get it wins the point
+    $(&quot;word&quot;).className = &quot;word ok&quot;;
+    setFb(id + &quot; got it! +1 point&quot;, &quot;ok&quot;);
+    setTimeout(nextWord, 1800);
+  } else {
+    const box = $(&quot;word&quot;);
+    box.className = &quot;word&quot;;
+    void box.offsetWidth;                 // restart the shake animation
+    box.className = &quot;word bad&quot;;
+    setFb(id + &quot; sent \u201C&quot; + sent + &quot;\u201D. Try again.&quot;, &quot;bad&quot;);
+  }
+}
+
+$(&quot;startBtn&quot;).onclick = startGame;
+$(&quot;skipBtn&quot;).onclick = () =&gt; { if (playing &amp;&amp; !locked) nextWord(); };
+$(&quot;hintBox&quot;).onchange = e =&gt; $(&quot;word&quot;).parentElement.classList.toggle(&quot;hints-off&quot;, !e.target.checked);
+
+// ---------- connection pills ----------
+function pill(id, state) { $(id).className = &quot;pill &quot; + state; }
+
+// ---------- MQTT ----------
+function setNet(t) { $(&quot;net&quot;).textContent = t; }
+if (typeof mqtt === &quot;undefined&quot;) {
+  setNet(&quot;Couldn\u2019t load the MQTT library. Check your internet connection, then reload the page.&quot;);
+  throw new Error(&quot;mqtt.js did not load&quot;);
+}
+let client = null;
+
+function connectMqtt() {
+  if (client) return;
+  setNet(&quot;Connecting to the server\u2026&quot;);
+  $(&quot;connBtn&quot;).textContent = &quot;Disconnect&quot;;
+  pill(&quot;pBroker&quot;, &quot;wait&quot;);
+  client = mqtt.connect(CFG.url, {
+    clientId: &quot;morse-game-&quot; + Math.random().toString(16).slice(2, 8),
+    reconnectPeriod: 3000
+  });
+  attach(client);
+}
+
+function disconnectMqtt() {
+  if (!client) return;
+  client.end();
+  client = null;
+  pill(&quot;pBroker&quot;, &quot;&quot;);
+  Object.values(players).forEach(p =&gt; p.online = false);
+  renderPlayers();
+  $(&quot;connBtn&quot;).textContent = &quot;Connect&quot;;
+  setNet(&quot;Disconnected. Press Connect to join the server.&quot;);
+}
+
+$(&quot;connBtn&quot;).onclick = () =&gt; { if (client) disconnectMqtt(); else connectMqtt(); };
+renderPlayers();
+
+function attach(client) {
+
+client.on(&quot;connect&quot;, () =&gt; {
+  pill(&quot;pBroker&quot;, &quot;on&quot;);
+  setNet(&quot;Connected to the server. Waiting for the board\u2026&quot;);
+  client.subscribe([CFG.base + &quot;/+/word&quot;, CFG.base + &quot;/+/status&quot;]);
+});
+client.on(&quot;reconnect&quot;, () =&gt; { pill(&quot;pBroker&quot;, &quot;wait&quot;); setNet(&quot;Reconnecting to the server\u2026&quot;); });
+client.on(&quot;close&quot;, () =&gt; pill(&quot;pBroker&quot;, &quot;&quot;));
+client.on(&quot;error&quot;, e =&gt; setNet(&quot;Can\u2019t reach the server (&quot; + e.message + &quot;). Your network may be blocking port 8884.&quot;));
+
+client.on(&quot;message&quot;, (topic, payload) =&gt; {
+  const msg = payload.toString().trim();
+  const parts = topic.split(&quot;/&quot;);         // e.g. pc/morse/board1/word
+  const kind = parts[parts.length - 1];
+  const id = parts[parts.length - 2];
+  const p = player(id);
+  if (kind === &quot;status&quot;) {
+    p.online = msg.toLowerCase() === &quot;online&quot;;
+    renderPlayers();
+    if (p.online) startGame();
+  } else if (kind === &quot;word&quot;) {
+    if (!p.online) { p.online = true; renderPlayers(); }
+    if (!playing) startGame();            // a word arrived, so the board is clearly there
+    else judge(id, msg);
+  }
+});
+}
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+    </details>
+  </section>
+
+  <section id="members">
+    <h2>Member</h2>
+    <p>68070223 ไกรวิชญ์ แก้วถาวร</p>
+    <p>68070227 จิรัชนนท์ ใยสุข</p>
+    <p>68070284 ปรณัฏฐ์ สุดสวาท</p>
+    <p>68070315 ศาสวัต รัชชุศุภกาญจน์</p>
+  </section>
+
+  <footer>Morse Word Game · โปรเจกต์รายวิชา PHYSICAL COMPUTING</footer>
+</div>
+</body>
+</html>
