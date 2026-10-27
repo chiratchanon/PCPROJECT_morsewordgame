@@ -24,7 +24,6 @@
 | ผู้ที่สนใจรหัสมอร์ส | มีเครื่องมือฝึกสะกดรหัสมอร์ส |
 | ครูและผู้จัดกิจกรรม | ใช้เป็นกิจกรรมในห้องเรียนหรือค่ายได้ เพราะรองรับหลายบอร์ดและมีตารางคะแนน |
 
-[Poster.pdf](https://github.com/user-attachments/files/34011668/Poster.pdf)
 
 สมาชิกกลุ่ม
 -
@@ -36,3 +35,7 @@
 ## Website & Video
 * Website : https://chiratchanon.github.io/pcproject_morsewordgame
 * Video : https://www.youtube.com/watch?v=laYDlC5gOGA
+
+## Poster
+[Poster.pdf](https://github.com/user-attachments/files/34011668/Poster.pdf)
+
