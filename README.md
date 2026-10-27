@@ -32,4 +32,4 @@
 
 ## Website & Video
 * Website : https://chiratchanon.github.io/pcproject_morsewordgame
-* Video : https://www.youtube.com/watch?v=rtZYhRRuVhE
+* Video : https://www.youtube.com/watch?v=laYDlC5gOGA
