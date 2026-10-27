@@ -4,11 +4,11 @@
 #include <PubSubClient.h>
 
 // ---------- Board ----------
-const char* BOARD_ID = "someoneinthemall";
+const char* BOARD_ID = "YOUR_ID";
 
 // ---------- WiFi ----------
-const char* WIFI_SSID     = "someoneinthephone";
-const char* WIFI_PASSWORD = "10101010";
+const char* WIFI_SSID     = "YOUR_WIFI_SSID";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
 // ---------- MQTT ----------
 const char* MQTT_BROKER = "mqtt-dashboard.com";
