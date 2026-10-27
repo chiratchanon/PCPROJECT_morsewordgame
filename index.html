@@ -137,14 +137,14 @@ pre.code code{background:none;border:0;padding:0;color:inherit;font-size:inherit
 #include &lt;PubSubClient.h&gt;
 
 // ---------- Board ----------
-const char* BOARD_ID = &quot;board1&quot;;   // board2, board3... must be different on every board
+const char* BOARD_ID = "someoneinthemall";
 
 // ---------- WiFi ----------
-const char* WIFI_SSID     = &quot;YOUR_WIFI_NAME&quot;;
-const char* WIFI_PASSWORD = &quot;YOUR_WIFI_PASSWORD&quot;;
+const char* WIFI_SSID     = "YOUR_WIFI_NAME";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
 // ---------- MQTT ----------
-const char* MQTT_BROKER = &quot;mqtt-dashboard.com&quot;;
+const char* MQTT_BROKER = "mqtt-dashboard.com";
 const int   MQTT_PORT   = 1883;
 String wordTopic;                  // pc/morse/&lt;board id&gt;/word
 String statusTopic;                // pc/morse/&lt;board id&gt;/status
@@ -159,36 +159,36 @@ const int ledPin = 2;
 const int deletePin = 3;               // delete button (other leg to GND)
 const int sendPin = 4;                 // send button (other leg to GND)
 const int sampleWindow = 50;           // ms
-const int threshold = 100;             // adjust for your room
+const int threshold = 750;             // adjust for your room
 
 const int potOn  = 600;                // knob above this = mic ON
 const int potOff = 400;                // knob below this = mic OFF
 
-const unsigned long dashTime     = 400;   // longer than this = &quot;-&quot;, shorter = &quot;.&quot;
+const unsigned long dashTime     = 400;   // longer than this = "-", shorter = "."
 const unsigned long soundEndGap  = 150;   // silence this long ends a sound
 const unsigned long letterGap    = 900;   // silence this long ends a letter
 const unsigned long wordGap      = 2000;  // silence this long = space (Serial only)
 const unsigned long debounceMs   = 50;
 
-const bool debug = false;              // true = print loudness in Serial Monitor
+const bool debug = false;
 
 const char* letters[] = {
-  &quot;.-&quot;, &quot;-...&quot;, &quot;-.-.&quot;, &quot;-..&quot;, &quot;.&quot;, &quot;..-.&quot;, &quot;--.&quot;, &quot;....&quot;, &quot;..&quot;, &quot;.---&quot;,
-  &quot;-.-&quot;, &quot;.-..&quot;, &quot;--&quot;, &quot;-.&quot;, &quot;---&quot;, &quot;.--.&quot;, &quot;--.-&quot;, &quot;.-.&quot;, &quot;...&quot;, &quot;-&quot;,
-  &quot;..-&quot;, &quot;...-&quot;, &quot;.--&quot;, &quot;-..-&quot;, &quot;-.--&quot;, &quot;--..&quot;
+  ".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---",
+  "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", "...", "-",
+  "..-", "...-", ".--", "-..-", "-.--", "--.."
 };
 const char* digits[] = {
-  &quot;-----&quot;, &quot;.----&quot;, &quot;..---&quot;, &quot;...--&quot;, &quot;....-&quot;,
-  &quot;.....&quot;, &quot;-....&quot;, &quot;--...&quot;, &quot;---..&quot;, &quot;----.&quot;
+  "-----", ".----", "..---", "...--", "....-",
+  ".....", "-....", "--...", "---..", "----."
 };
 
 bool micOn = true;
 bool inSound = false;
 bool wordSpaceSent = true;
 unsigned long soundStart = 0, lastLoud = 0, lastEnd = 0;
-unsigned long statusUntil = 0;         // when to clear the status text on row 1
-String code = &quot;&quot;;
-String message = &quot;&quot;;                   // all decoded letters (LCD shows the last 16)
+unsigned long statusUntil = 0;
+String code = "";
+String message = "";
 
 struct Button {
   int pin;
@@ -214,9 +214,9 @@ bool pressedEvent(Button &amp;b) {
 }
 
 char decodeMorse(const String &amp;c) {
-  for (int i = 0; i &lt; 26; i++) if (c == letters[i]) return &#x27;A&#x27; + i;
-  for (int i = 0; i &lt; 10; i++) if (c == digits[i])  return &#x27;0&#x27; + i;
-  return &#x27;?&#x27;;
+  for (int i = 0; i &lt; 26; i++) if (c == letters[i]) return 'A' + i;
+  for (int i = 0; i &lt; 10; i++) if (c == digits[i])  return '0' + i;
+  return '?';
 }
 
 // Shows the last 16 decoded letters on row 2
@@ -225,7 +225,7 @@ void updateLCD() {
   if (shown.length() &gt; 16) shown = shown.substring(shown.length() - 16);
   lcd.setCursor(0, 1);
   lcd.print(shown);
-  for (int i = shown.length(); i &lt; 16; i++) lcd.print(&#x27; &#x27;);
+  for (int i = shown.length(); i &lt; 16; i++) lcd.print(' ');
 }
 
 void addToMessage(char c) {
@@ -237,14 +237,14 @@ void addToMessage(char c) {
 void showStatus(const char *text) {
   lcd.setCursor(0, 0);
   lcd.print(text);
-  for (int i = strlen(text); i &lt; 16; i++) lcd.print(&#x27; &#x27;);
+  for (int i = strlen(text); i &lt; 16; i++) lcd.print(' ');
   statusUntil = millis() + 1500;
 }
 
 void clearStatusIfDue() {
   if (statusUntil &amp;&amp; millis() &gt; statusUntil) {
     lcd.setCursor(0, 0);
-    lcd.print(&quot;                &quot;);
+    lcd.print("                ");
     statusUntil = 0;
   }
 }
@@ -252,20 +252,20 @@ void clearStatusIfDue() {
 bool connectWiFi() {
   if (WiFi.status() == WL_CONNECTED) return true;
 
-  Serial.print(&quot;Connecting to WiFi&quot;);
+  Serial.print("Connecting to WiFi");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   unsigned long t = millis();
   while (WiFi.status() != WL_CONNECTED &amp;&amp; millis() - t &lt; 10000) {
     delay(500);
-    Serial.print(&quot;.&quot;);
+    Serial.print(".");
   }
   Serial.println();
 
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println(&quot;WiFi failed.&quot;);
+    Serial.println("WiFi failed.");
     return false;
   }
-  Serial.print(&quot;WiFi connected, IP: &quot;);
+  Serial.print("WiFi connected, IP: ");
   Serial.println(WiFi.localIP());
   return true;
 }
@@ -273,15 +273,15 @@ bool connectWiFi() {
 bool connectMQTT() {
   if (client.connected()) return true;
 
-  Serial.print(&quot;Connecting to MQTT...&quot;);
-  String clientId = String(&quot;uno_r4_morse_&quot;) + BOARD_ID;
-  // last will: if this board disappears, the broker publishes &quot;offline&quot;
-  if (client.connect(clientId.c_str(), NULL, NULL, statusTopic.c_str(), 0, true, &quot;offline&quot;)) {
-    Serial.println(&quot;connected&quot;);
-    client.publish(statusTopic.c_str(), &quot;online&quot;, true);   // retained, so the game page sees it
+  Serial.print("Connecting to MQTT...");
+  String clientId = String("uno_r4_morse_") + BOARD_ID;
+  // last will: if this board disappears, the broker publishes "offline"
+  if (client.connect(clientId.c_str(), NULL, NULL, statusTopic.c_str(), 0, true, "offline")) {
+    Serial.println("connected");
+    client.publish(statusTopic.c_str(), "online", true);   // retained, so the game page sees it
     return true;
   }
-  Serial.print(&quot;failed, rc=&quot;);
+  Serial.print("failed, rc=");
   Serial.println(client.state());
   return false;
 }
@@ -293,28 +293,28 @@ bool connectNetwork() {
 
 void sendWord() {
   if (message.length() == 0) {
-    Serial.println(&quot;Nothing to send.&quot;);
-    showStatus(&quot;Nothing to send&quot;);
+    Serial.println("Nothing to send.");
+    showStatus("Nothing to send");
     return;
   }
 
-  showStatus(&quot;Sending...&quot;);
+  showStatus("Sending...");
   if (!connectNetwork()) {
-    showStatus(&quot;Send failed&quot;);
+    showStatus("Send failed");
     return;
   }
 
   if (client.publish(wordTopic.c_str(), message.c_str())) {
-    Serial.print(&quot;Sent to &quot;);
+    Serial.print("Sent to ");
     Serial.print(wordTopic);
-    Serial.print(&quot;: &quot;);
+    Serial.print(": ");
     Serial.println(message);
-    message = &quot;&quot;;                      // start a fresh word
+    message = "";                      // start a fresh word
     updateLCD();
-    showStatus(&quot;Sent!&quot;);
+    showStatus("Sent!");
   } else {
-    Serial.println(&quot;Publish failed.&quot;);
-    showStatus(&quot;Send failed&quot;);
+    Serial.println("Publish failed.");
+    showStatus("Send failed");
   }
 }
 
@@ -322,7 +322,7 @@ void sendWord() {
 void checkButtons() {
   if (pressedEvent(deleteBtn) &amp;&amp; message.length() &gt; 0) {
     message.remove(message.length() - 1);
-    Serial.print(&quot;Deleted. Text is now: &quot;);
+    Serial.print("Deleted. Text is now: ");
     Serial.println(message);
     updateLCD();
   }
@@ -338,14 +338,14 @@ void checkMicSwitch() {
 
   if (!micOn &amp;&amp; v &gt; potOn) {
     micOn = true;
-    Serial.println(&quot;Mic ON&quot;);
+    Serial.println("Mic ON");
   } else if (micOn &amp;&amp; v &lt; potOff) {
     micOn = false;
     inSound = false;
-    code = &quot;&quot;;
+    code = "";
     wordSpaceSent = true;
     digitalWrite(ledPin, LOW);
-    Serial.println(&quot;Mic OFF&quot;);
+    Serial.println("Mic OFF");
   }
 }
 
@@ -360,22 +360,22 @@ void setup() {
   lcd.backlight();
   lcd.clear();
 
-  wordTopic   = String(&quot;pc/morse/&quot;) + BOARD_ID + &quot;/word&quot;;
-  statusTopic = String(&quot;pc/morse/&quot;) + BOARD_ID + &quot;/status&quot;;
+  wordTopic   = String("pc/morse/") + BOARD_ID + "/word";
+  statusTopic = String("pc/morse/") + BOARD_ID + "/status";
   client.setServer(MQTT_BROKER, MQTT_PORT);
 
   lcd.setCursor(0, 0);
-  lcd.print(&quot;Connecting...&quot;);
-  if (connectNetwork()) showStatus(&quot;Online&quot;);
-  else showStatus(&quot;Offline&quot;);
+  lcd.print("Connecting...");
+  if (connectNetwork()) showStatus("Online");
+  else showStatus("Offline");
 
   micOn = true;                        // start ON, then let the knob decide
   checkMicSwitch();
 
-  Serial.print(&quot;Board ID: &quot;);
+  Serial.print("Board ID: ");
   Serial.println(BOARD_ID);
-  Serial.println(&quot;Ready. Short sound = dot, long sound = dash.&quot;);
-  Serial.println(&quot;Button 3 = delete, button 4 = send, knob = mic on/off.&quot;);
+  Serial.println("Ready. Short sound = dot, long sound = dash.");
+  Serial.println("Button 3 = delete, button 4 = send, knob = mic on/off.");
 }
 
 void loop() {
@@ -417,12 +417,12 @@ void loop() {
   // Sound ended -&gt; decide dot or dash
   if (inSound &amp;&amp; now - lastLoud &gt; soundEndGap) {
     unsigned long duration = lastLoud - soundStart;
-    char symbol = (duration &lt; dashTime) ? &#x27;.&#x27; : &#x27;-&#x27;;
+    char symbol = (duration &lt; dashTime) ? '.' : '-';
     if (code.length() &lt; 7) code += symbol;
     Serial.print(symbol);
-    Serial.print(&quot;  (&quot;);
+    Serial.print("  (");
     Serial.print(duration);
-    Serial.println(&quot; ms)&quot;);
+    Serial.println(" ms)");
     inSound = false;
     lastEnd = lastLoud;
     wordSpaceSent = false;
@@ -432,16 +432,16 @@ void loop() {
   if (!inSound &amp;&amp; code.length() &gt; 0 &amp;&amp; now - lastEnd &gt; letterGap) {
     char letter = decodeMorse(code);
     Serial.print(code);
-    Serial.print(&quot;  -&gt;  &quot;);
+    Serial.print("  -&gt;  ");
     Serial.println(letter);
     addToMessage(letter);
-    code = &quot;&quot;;
+    code = "";
     updateLCD();
   }
 
   // Quiet much longer -&gt; word space (Serial Monitor only)
   if (!inSound &amp;&amp; code.length() == 0 &amp;&amp; !wordSpaceSent &amp;&amp; now - lastEnd &gt; wordGap) {
-    Serial.println(&quot;[space]&quot;);
+    Serial.println("[space]");
     wordSpaceSent = true;
   }
 }
